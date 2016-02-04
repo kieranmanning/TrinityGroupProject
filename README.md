@@ -1,3 +1,6 @@
+### Prerequisuites
+Docker, docker-compose
+
 1. # sudo ./build.sh
 2. # sudo docker-compose -f env.yml up
 3. # sudo docker-compose -f ps
