@@ -36,14 +36,9 @@ def searchForStart(dckerNodes):
 			return dckerNodes[t]
 	else:
 		return 0
-		
 
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
   mySwarmpose= Swarmpose()
-=======
-	main()
->>>>>>> 7956e25d89e25481937c82232e9c6041b57dfa79
 
