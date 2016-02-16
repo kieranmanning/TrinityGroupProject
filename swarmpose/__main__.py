@@ -1,25 +1,38 @@
 """ main code goes here """
 from docker import Client
+import yaml
 
-def main():
-	HOST = "51.255.33.85"
-	PORT = "443" #443 redirected to port 4000 on remote server
+class Swarmpose():
 
-	#Connect to remote daemon
-	cli = Client(base_url='tcp://' + HOST + ':' + PORT)
-	# print (cli.info())
+  def __init__(self):
+    self.HOST = "51.255.33.85"
+    self.PORT = "443" #443 redirected to port 4000 on remote server
 
-	#Run the hello-world image and print the output
-	container = cli.create_container(image='hello-world:latest')
-	cli.start(container=container.get('Id'))
+    #Connect to remote daemon
+    self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
+    # print (cli.info())
 
-	print (cli.logs(container=container.get('Id')).decode('UTF-8'))
-	result = cli.inspect_container(container=container.get('Id'))
+    #Run the hello-world image and print the output
+    self.container = self.cli.create_container(image='hello-world:latest')
+    self.cli.start(container=self.container.get('Id'))
 
-	print ("This image ran on " + result['Node']['Addr'])
+    print (self.cli.logs(container=self.container.get('Id')).decode('UTF-8'))
+    result = self.cli.inspect_container(container=self.container.get('Id'))
+
+    print ("This image ran on " + result['Node']['Addr'])
+
+    self.parseFile('env.yml')
+
+
+
+  def parseFile(self, file):
+    with open(file, 'r') as fh:
+      yaml_dict=yaml.load(fh)
+      print (yaml_dict)
 
 
 
 
 if __name__ == '__main__':
-	main()
+  mySwarmpose= Swarmpose()
+
