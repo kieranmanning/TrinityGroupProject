@@ -3,16 +3,20 @@ from docker import Client
 import argparse
 import yaml
 
+#allows us to specify the arguments that the script must recieve in order to execute
 def clargs():
 	parser = argparse.ArgumentParser(description='a script to start an application on a distributed system')
-	requiredNamed = parser.add_argument_group('required named arguments')
+	required = parser.add_argument_group('required arguments')
 	#required arguments
-	requiredNamed.add_argument('-c', '--config', required=True, help='config file describing the application')
+	required.add_argument('-c', '--config', required=True, help='yaml file describing the application')
+	#optional arguments
+	parser.add_argument('-q', '--quiet', help='Supress messages from the script')
 	return parser.parse_args()
 
 
 class Swarmpose():
 
+	#initialise the swarmpose class
 	def __init__(self, yamal):
 		self.yamal = yamal
 		self.HOST = "51.255.33.85"
@@ -20,28 +24,27 @@ class Swarmpose():
 
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
-		# print (cli.info())
 
 		#Run the hello-world image and print the output
-		self.container = self.cli.create_container(image='hello-world:latest')
-		self.cli.start(container=self.container.get('Id'))
+		container = self.cli.create_container(image='hello-world:latest')
+		self.cli.start(container=container.get('Id'))
 
-		print (self.cli.logs(container=self.container.get('Id')).decode('UTF-8'))
-		result = self.cli.inspect_container(container=self.container.get('Id'))
+		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
+		result = self.cli.inspect_container(container=container.get('Id'))
 
 		print ("This image ran on " + result['Node']['Addr'])
 
-		self.parseFile('env.yml')
+		#parse the yaml file into a dictionary of dictionaries
+		self.yaml_dict = self.parseFile('env.yml')
+		#generate a dictionary of nodes with no dependancies
+		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config }
 
+	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
 		with open(file, 'r') as fh:
 			yaml_dict=yaml.load(fh)
 			print (yaml_dict)
 			return yaml_dict
-
-	def searchForStart(self, dockerNodes):
-		return [img for img in dockerNodes if img['links'] == '']
-
 
 
 if __name__ == '__main__':
