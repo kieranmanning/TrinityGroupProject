@@ -37,7 +37,7 @@ class Swarmpose():
 		#parse the yaml file into a dictionary of dictionaries
 		self.yaml_dict = self.parseFile('env.yml')
 		#generate a dictionary of nodes with no dependancies
-		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config }
+		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config}
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
@@ -45,7 +45,6 @@ class Swarmpose():
 			yaml_dict=yaml.load(fh)
 			print (yaml_dict)
 			return yaml_dict
-
 
 if __name__ == '__main__':
 	args = clargs()
