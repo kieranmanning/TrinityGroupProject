@@ -25,6 +25,7 @@ class Swarmpose():
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 
+
 		#Run the hello-world image and print the output
 		container = self.cli.create_container(image='hello-world:latest')
 		self.cli.start(container=container.get('Id'))
