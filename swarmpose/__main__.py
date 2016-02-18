@@ -25,20 +25,12 @@ class Swarmpose():
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 
-
-		#Run the hello-world image and print the output
-		container = self.cli.create_container(image='hello-world:latest')
-		self.cli.start(container=container.get('Id'))
-
-		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
-		result = self.cli.inspect_container(container=container.get('Id'))
-
-		print ("This image ran on " + result['Node']['Addr'])
-
 		#parse the yaml file into a dictionary of dictionaries
 		self.yaml_dict = self.parseFile('env.yml')
 		#generate a dictionary of nodes with no dependancies
 		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config}
+		print (self.starting_nodes)
+		
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
@@ -46,6 +38,17 @@ class Swarmpose():
 			yaml_dict=yaml.load(fh)
 			print (yaml_dict)
 			return yaml_dict
+
+	def runImage(self, image):
+		#Run the hello-world image and print the output
+		container = self.cli.create_container(image=image)
+		self.cli.start(container=container.get('Id'))
+
+		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
+		result = self.cli.inspect_container(container=container.get('Id'))
+
+		print ("This image ran on " + result['Node']['Addr'])
+
 
 if __name__ == '__main__':
 	args = clargs()
