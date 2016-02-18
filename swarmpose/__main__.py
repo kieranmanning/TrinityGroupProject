@@ -31,7 +31,8 @@ class Swarmpose():
 		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config}
 		print (self.starting_nodes)
 		for image in self.starting_nodes:
-			self.runImage(image)
+			 test = self.runImage(image)
+			 self.stopImage(test)
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
@@ -49,7 +50,10 @@ class Swarmpose():
 		result = self.cli.inspect_container(container=container.get('Id'))
 
 		print ("This image ran on " + result['Node']['Addr'])
+		return container.get('Id')
 
+	def stopImage(self, container):
+		self.cli.stop(container)
 
 if __name__ == '__main__':
 	args = clargs()
