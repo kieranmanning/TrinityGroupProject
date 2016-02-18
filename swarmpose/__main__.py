@@ -30,7 +30,8 @@ class Swarmpose():
 		#generate a dictionary of nodes with no dependancies
 		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config}
 		print (self.starting_nodes)
-
+		for image in self.starting_nodes:
+			self.runImage(image)
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
