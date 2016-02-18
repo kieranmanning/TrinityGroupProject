@@ -26,11 +26,11 @@ class Swarmpose():
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 
 		#parse the yaml file into a dictionary of dictionaries
-		self.yaml_dict = self.parseFile('env.yml')
+		self.yaml_dict = self.parseFile(yamal)
 		#generate a dictionary of nodes with no dependancies
 		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config}
 		print (self.starting_nodes)
-		
+
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
