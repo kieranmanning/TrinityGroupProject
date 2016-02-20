@@ -27,12 +27,21 @@ class Swarmpose():
 
 		#parse the yaml file into a dictionary of dictionaries
 		self.yaml_dict = self.parseFile(yamal)
+		#Create a dictionary to indcate the nodes run
+		self.nodes_run = {}
 		#generate a dictionary of nodes with no dependancies
 		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config}
 		print (self.starting_nodes)
 		for image in self.starting_nodes:
 			 test = self.runImage(image)
 			 self.stopImage(test)
+		self.nodes_run.update(self.starting_nodes)
+		print (self.nodes_run)
+		#get the next dictionary of nodes that depend on the starting nodes
+		self.next_nodes_2run = {}
+		for image in self.yaml_dict:
+			if self.starting_nodes.has_key(image['links']):
+				self.next_nodes_2run[image] = self.yaml_dict[image]
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
