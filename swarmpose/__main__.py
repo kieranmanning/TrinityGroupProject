@@ -2,6 +2,7 @@
 from docker import Client
 import argparse
 import yaml
+import pprint
 
 #allows us to specify the arguments that the script must recieve in order to execute
 def clargs():
@@ -21,27 +22,32 @@ class Swarmpose():
 		self.yamal = yamal
 		self.HOST = "51.255.33.85"
 		self.PORT = "443" #443 redirected to port 4000 on remote server
-
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
-
 		#parse the yaml file into a dictionary of dictionaries
 		self.yaml_dict = self.parseFile(yamal)
 		#Create a dictionary to indcate the nodes run
 		self.nodes_run = {}
 		#generate a dictionary of nodes with no dependancies
 		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config}
-		print (self.starting_nodes)
+		self.remaining_nodes = {name:config for name, config in self.yaml_dict.items() if name not in self.starting_nodes.keys()}
+		pprint.pprint(self.starting_nodes, width=1)
 		for image in self.starting_nodes:
 			 test = self.runImage(image)
 			 self.stopImage(test)
 		self.nodes_run.update(self.starting_nodes)
-		print (self.nodes_run)
+		print('starting nodes %s' %self.starting_nodes)
 		#get the next dictionary of nodes that depend on the starting nodes
 		self.next_nodes_2run = {}
-		for image in self.yaml_dict:
-			if self.starting_nodes.has_key(image['links']):
+		for image, value in self.remaining_nodes.items():
+			print('image %s, value %s' % (image, value))
+			if set(list(self.starting_nodes.keys())).issubset(set(value['links'])) :
+				print('found things')
 				self.next_nodes_2run[image] = self.yaml_dict[image]
+
+		print("starting next %s" % self.next_nodes_2run)
+
+		# self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
