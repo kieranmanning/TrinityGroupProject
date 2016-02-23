@@ -25,35 +25,29 @@ class Swarmpose():
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 		#parse the yaml file into a dictionary of dictionaries
-		self.yaml_dict = self.parseFile(yamal)
-		#Create a dictionary to indcate the nodes run
-		self.nodes_run = {}
-		#generate a dictionary of nodes with no dependancies
-		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config}
-		self.remaining_nodes = {name:config for name, config in self.yaml_dict.items() if name not in self.starting_nodes.keys()}
-		pprint.pprint(self.starting_nodes, width=1)
-		print (self.starting_nodes)
+		self.nodes = self.parseFile(yamal)
 
+		#seperate our nodes into two dictionaries, the starting_nodes wich have no dependancies and
+		#remaining nodes which have dependancies
+		self.starting_nodes = {name:config for name,config in self.nodes.items() if 'links' not in config}
+		self.remaining_nodes = {name:self.nodes[name] for name  in self.nodes.keys() if name not in self.starting_nodes.keys()}
+
+		#Create a dictionary to indcate the nodes that have been started
+		self.nodes_run = {}
 		for image in self.starting_nodes:
-			 test = self.runImage(image, self.yaml_dict[image]['expose'])
+			 test = self.runImage(image, self.nodes[image]['expose'])
 			 self.stopImage(test)
 		self.nodes_run.update(self.starting_nodes)
-		print('starting nodes %s' %self.starting_nodes)
+
 		#get the next dictionary of nodes that depend on the starting nodes
 		self.next_nodes_2run = {}
-		for image, value in self.remaining_nodes.items():
-			print('image %s, value %s' % (image, value))
-			if set(list(self.starting_nodes.keys())).issubset(set(value['links'])) :
-				print('found things')
-				self.next_nodes_2run[image] = self.yaml_dict[image]
-		#self.nodes_run.update(self.starting_nodes)
-		##print (self.nodes_run)
-		#get the next dictionary of nodes that depend on the starting nodes
-		#self.next_nodes_2run = {}
-		#for image in self.yaml_dict:
-		#	if self.starting_nodes.has_key(image['links']):
-		#		self.next_nodes_2run[image] = self.yaml_dict[image]
+		for name, config in self.remaining_nodes.items():
+			if set(config['links']).issubset(set(list(self.starting_nodes.keys()))):
+				self.next_nodes_2run[name] = config
 
+		# self.next_nodes_2run = {name:config for name, config in self.remaining_nodes.items() if set(config['links']).issubset(set(list(self.starting_nodes.keys())))}
+
+		#self.nodes_run.update(self.starting_nodes)
 		print("starting next %s" % self.next_nodes_2run)
 
 		# self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
@@ -61,9 +55,9 @@ class Swarmpose():
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
 		with open(file, 'r') as fh:
-			yaml_dict=yaml.load(fh)
-			print (yaml_dict)
-			return yaml_dict
+			nodes=yaml.load(fh)
+			print (nodes)
+			return nodes
 
 	def runImage(self, image, ports):
 		#Run the hello-world image and print the output
