@@ -28,13 +28,10 @@ class Swarmpose():
 		self.PORT = "443" #443 redirected to port 4000 on remote server
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
-		#parse the yaml file into a dictionary of dictionaries
-		self.nodes = self.parseFile(yamal)
 
 
 
 		#self.nodes_run.update(self.starting_nodes)
-		print("starting next %s" % self.next_nodes_2run)
 
 		# self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
 
@@ -61,9 +58,11 @@ class Swarmpose():
 	def stopImage(self, container):
 		self.cli.stop(container)
 
-	def start():
+	def start(self, yamal):
 		print('**** Starting Application ****')
-
+		yamal = yamal
+		#parse the yaml file into a dictionary of dictionaries
+		nodes = self.parseFile(yamal)
 		#seperate our nodes into two dictionaries, the starting_nodes wich have no dependancies and
 		#remaining nodes which have dependancies
 		starting_nodes = {name:config for name,config in nodes.items() if 'links' not in config}
@@ -71,28 +70,35 @@ class Swarmpose():
 
 		#Create a dictionary to indcate the nodes that have been started
 		nodes_run = {}
-		for image in starting_nodes:
-			 test = runImage(image, nodes[image]['expose'])
-			 stopImage(test)
+		#for image in starting_nodes:
+			# test = runImage(image, nodes[image]['expose'])
+			# stopImage(test)
 		nodes_run.update(starting_nodes)
-
+		
 		#get the next dictionary of nodes that depend on the starting nodes
-		next_nodes_2run = {}
-		for name, config in remaining_nodes.items():
-			if set(config['links']).issubset(set(list(starting_nodes.keys()))):
-				next_nodes_2run[name] = config
-						# next_nodes_2run = {name:config for name, config in remaining_nodes.items() if set(config['links']).issubset(set(list(self.starting_nodes.keys())))}
+		next_nodes_2run = self.nextNodesRunning(remaining_nodes, nodes_run)
+		print("starting next %s" % next_nodes_2run)
 
 
 	def stop():
 		print('**** Stopping Application ****')
+	
+	def nextNodesRunning(self, remaining_nodes, nodes_ran):
+		#get the next dictionary of nodes that depend on the starting nodes
+		next_nodes_run = {}
+		for name, config in remaining_nodes.items():
+			if set(config['links']).issubset(set(list(nodes_ran.keys()))):
+				next_nodes_run[name] = config
+
+		#self.next_nodes_2run = {name:config for name, config in self.remaining_nodes.items() if set(config['links']).issubset(set(list(self.starting_nodes.keys())))}
+		return next_nodes_run
 
 if __name__ == '__main__':
 	args = clargs()
 	print(args.action)
 	mySwarmpose= Swarmpose(args.config)
 	if(args.action == 'start'):
-		mySwarmpose.start()
+		mySwarmpose.start(args.config)
 	else:
 		mySwarmpose.stop()
 
