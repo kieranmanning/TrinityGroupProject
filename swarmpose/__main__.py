@@ -32,16 +32,17 @@ class Swarmpose():
 		#generate a dictionary of nodes with no dependancies
 		self.starting_nodes = {name:config for name,config in self.yaml_dict.items() if 'links' not in config}
 		print (self.starting_nodes)
+
 		for image in self.starting_nodes:
-			 test = self.runImage(image)
+			 test = self.runImage(image, self.yaml_dict[image]['expose'])
 			 self.stopImage(test)
-		self.nodes_run.update(self.starting_nodes)
-		print (self.nodes_run)
+		#self.nodes_run.update(self.starting_nodes)
+		##print (self.nodes_run)
 		#get the next dictionary of nodes that depend on the starting nodes
-		self.next_nodes_2run = {}
-		for image in self.yaml_dict:
-			if self.starting_nodes.has_key(image['links']):
-				self.next_nodes_2run[image] = self.yaml_dict[image]
+		#self.next_nodes_2run = {}
+		#for image in self.yaml_dict:
+		#	if self.starting_nodes.has_key(image['links']):
+		#		self.next_nodes_2run[image] = self.yaml_dict[image]
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
@@ -50,9 +51,11 @@ class Swarmpose():
 			print (yaml_dict)
 			return yaml_dict
 
-	def runImage(self, image):
+	def runImage(self, image, ports):
 		#Run the hello-world image and print the output
-		container = self.cli.create_container(image=image)
+		bindings = dict(zip(ports, ports))
+		print (bindings)
+		container = self.cli.create_container(image=image, ports=ports, host_config=self.cli.create_host_config(port_bindings=bindings))
 		self.cli.start(container=container.get('Id'))
 
 		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
