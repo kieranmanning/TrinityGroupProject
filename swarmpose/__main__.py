@@ -58,6 +58,7 @@ class Swarmpose():
 
 	def start(self):
 		print('**** Starting Application ****')
+		nodes = self.parseFile(self.yamal)
 		#seperate our nodes into two dictionaries, the starting_nodes wich have no dependancies and
 		#remaining nodes which have dependancies
 		starting_nodes = {name:config for name,config in nodes.items() if 'links' not in config}
@@ -69,10 +70,14 @@ class Swarmpose():
 			# test = runImage(image, nodes[image]['expose'])
 			# stopImage(test)
 		nodes_run.update(starting_nodes)
-
-		#get the next dictionary of nodes that depend on the starting nodes
-		next_nodes_2run = self.nextNodesRunning(remaining_nodes, nodes_run)
-		print("starting next %s" % next_nodes_2run)
+		#keep runnng until all nodes have been run
+		while len(nodes_run) != len(nodes):
+			#get the next dictionary of nodes that depend on the starting nodes
+			next_nodes_2run = self.nextNodesRunning(remaining_nodes, nodes_run)
+			print("starting next %s" % next_nodes_2run)
+			nodes_run.update(next_nodes_2run)
+			remaining_nodes = {name:nodes[name] for name in nodes.keys() if name not in nodes_run.keys()}
+			
 
 
 	def stop(self):
