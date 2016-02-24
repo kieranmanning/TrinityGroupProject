@@ -28,7 +28,7 @@ class Swarmpose():
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 		#parse the yaml file into a dictionary of dictionaries
-		nodes = self.parseFile(yamal)
+		self.nodes = self.parseFile(yamal)
 		#self.nodes_run.update(self.starting_nodes)
 
 		# self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
@@ -58,11 +58,10 @@ class Swarmpose():
 
 	def start(self):
 		print('**** Starting Application ****')
-		nodes = self.parseFile(self.yamal)
 		#seperate our nodes into two dictionaries, the starting_nodes wich have no dependancies and
 		#remaining nodes which have dependancies
-		starting_nodes = {name:config for name,config in nodes.items() if 'links' not in config}
-		remaining_nodes = {name:nodes[name] for name  in nodes.keys() if name not in starting_nodes.keys()}
+		starting_nodes = {name:config for name,config in self.nodes.items() if 'links' not in config}
+		remaining_nodes = {name:self.nodes[name] for name  in self.nodes.keys() if name not in starting_nodes.keys()}
 
 		#Create a dictionary to indcate the nodes that have been started
 		nodes_run = {}
@@ -71,12 +70,12 @@ class Swarmpose():
 			# stopImage(test)
 		nodes_run.update(starting_nodes)
 		#keep runnng until all nodes have been run
-		while len(nodes_run) != len(nodes):
+		while len(nodes_run) != len(self.nodes):
 			#get the next dictionary of nodes that depend on the starting nodes
 			next_nodes_2run = self.nextNodesRunning(remaining_nodes, nodes_run)
 			print("starting next %s" % next_nodes_2run)
 			nodes_run.update(next_nodes_2run)
-			remaining_nodes = {name:nodes[name] for name in nodes.keys() if name not in nodes_run.keys()}
+			remaining_nodes = {name:self.nodes[name] for name in self.nodes.keys() if name not in nodes_run.keys()}
 			
 
 
