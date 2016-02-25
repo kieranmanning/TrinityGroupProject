@@ -9,7 +9,6 @@ def clargs():
 	parser = argparse.ArgumentParser(description='a script to start an application on a distributed system')
 	required = parser.add_argument_group('required arguments')
 	sub_parser = parser.add_subparsers(dest='action')
-
 	#sub commands for the program
 	parser_start = sub_parser.add_parser('start', help='start an application')
 	parser_stop = sub_parser.add_parser('stop', help='stop an application')
@@ -28,9 +27,8 @@ class Swarmpose():
 		self.PORT = "443" #443 redirected to port 4000 on remote server
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
-
-
-
+		#parse the yaml file into a dictionary of dictionaries
+		nodes = self.parseFile(yamal)
 		#self.nodes_run.update(self.starting_nodes)
 
 		# self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
@@ -58,11 +56,8 @@ class Swarmpose():
 	def stopImage(self, container):
 		self.cli.stop(container)
 
-	def start(self, yamal):
+	def start(self):
 		print('**** Starting Application ****')
-		yamal = yamal
-		#parse the yaml file into a dictionary of dictionaries
-		nodes = self.parseFile(yamal)
 		#seperate our nodes into two dictionaries, the starting_nodes wich have no dependancies and
 		#remaining nodes which have dependancies
 		starting_nodes = {name:config for name,config in nodes.items() if 'links' not in config}
@@ -74,15 +69,15 @@ class Swarmpose():
 			# test = runImage(image, nodes[image]['expose'])
 			# stopImage(test)
 		nodes_run.update(starting_nodes)
-		
+
 		#get the next dictionary of nodes that depend on the starting nodes
 		next_nodes_2run = self.nextNodesRunning(remaining_nodes, nodes_run)
 		print("starting next %s" % next_nodes_2run)
 
 
-	def stop():
+	def stop(self):
 		print('**** Stopping Application ****')
-	
+
 	def nextNodesRunning(self, remaining_nodes, nodes_ran):
 		#get the next dictionary of nodes that depend on the starting nodes
 		next_nodes_run = {}
@@ -98,7 +93,6 @@ if __name__ == '__main__':
 	print(args.action)
 	mySwarmpose= Swarmpose(args.config)
 	if(args.action == 'start'):
-		mySwarmpose.start(args.config)
+		mySwarmpose.start()
 	else:
 		mySwarmpose.stop()
-
