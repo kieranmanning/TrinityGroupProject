@@ -4,11 +4,16 @@ import argparse
 import yaml
 import pprint
 
-#allows us to specify the arguments that the script must recieve in order to execute
+#allows us to specify the command line arguments that the script must recieve in order to execute
 def clargs():
 	parser = argparse.ArgumentParser(description='a script to start an application on a distributed system')
 	required = parser.add_argument_group('required arguments')
-	#required arguments
+	sub_parser = parser.add_subparsers(dest='action')
+
+	#sub commands for the program
+	parser_start = sub_parser.add_parser('start', help='start an application')
+	parser_stop = sub_parser.add_parser('stop', help='stop an application')
+	# required arguments
 	required.add_argument('-c', '--config', required=True, help='yaml file describing the application')
 	#optional arguments
 	parser.add_argument('-q', '--quiet', help='Supress messages from the script')
@@ -16,7 +21,6 @@ def clargs():
 
 
 class Swarmpose():
-
 	#initialise the swarmpose class
 	def __init__(self, yamal):
 		self.yamal = yamal
@@ -75,7 +79,18 @@ class Swarmpose():
 	def stopImage(self, container):
 		self.cli.stop(container)
 
+	def start():
+		print('**** Starting Application ****')
+
+	def stop():
+		print('**** Stopping Application ****')
+
 if __name__ == '__main__':
 	args = clargs()
+	print(args.action)
 	mySwarmpose= Swarmpose(args.config)
+	if(args.action == 'start'):
+		mySwarmpose.start()
+	else:
+		mySwarmpose.stop()
 
