@@ -31,25 +31,7 @@ class Swarmpose():
 		#parse the yaml file into a dictionary of dictionaries
 		self.nodes = self.parseFile(yamal)
 
-		#seperate our nodes into two dictionaries, the starting_nodes wich have no dependancies and
-		#remaining nodes which have dependancies
-		self.starting_nodes = {name:config for name,config in self.nodes.items() if 'links' not in config}
-		self.remaining_nodes = {name:self.nodes[name] for name  in self.nodes.keys() if name not in self.starting_nodes.keys()}
 
-		#Create a dictionary to indcate the nodes that have been started
-		self.nodes_run = {}
-		for image in self.starting_nodes:
-			 test = self.runImage(image, self.nodes[image]['expose'])
-			 self.stopImage(test)
-		self.nodes_run.update(self.starting_nodes)
-
-		#get the next dictionary of nodes that depend on the starting nodes
-		self.next_nodes_2run = {}
-		for name, config in self.remaining_nodes.items():
-			if set(config['links']).issubset(set(list(self.starting_nodes.keys()))):
-				self.next_nodes_2run[name] = config
-
-		# self.next_nodes_2run = {name:config for name, config in self.remaining_nodes.items() if set(config['links']).issubset(set(list(self.starting_nodes.keys())))}
 
 		#self.nodes_run.update(self.starting_nodes)
 		print("starting next %s" % self.next_nodes_2run)
@@ -81,6 +63,26 @@ class Swarmpose():
 
 	def start():
 		print('**** Starting Application ****')
+
+		#seperate our nodes into two dictionaries, the starting_nodes wich have no dependancies and
+		#remaining nodes which have dependancies
+		starting_nodes = {name:config for name,config in nodes.items() if 'links' not in config}
+		remaining_nodes = {name:nodes[name] for name  in nodes.keys() if name not in starting_nodes.keys()}
+
+		#Create a dictionary to indcate the nodes that have been started
+		nodes_run = {}
+		for image in starting_nodes:
+			 test = runImage(image, nodes[image]['expose'])
+			 stopImage(test)
+		nodes_run.update(starting_nodes)
+
+		#get the next dictionary of nodes that depend on the starting nodes
+		next_nodes_2run = {}
+		for name, config in remaining_nodes.items():
+			if set(config['links']).issubset(set(list(starting_nodes.keys()))):
+				next_nodes_2run[name] = config
+						# next_nodes_2run = {name:config for name, config in remaining_nodes.items() if set(config['links']).issubset(set(list(self.starting_nodes.keys())))}
+
 
 	def stop():
 		print('**** Stopping Application ****')
