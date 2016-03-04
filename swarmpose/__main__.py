@@ -12,6 +12,7 @@ def clargs():
 	#sub commands for the program
 	parser_start = sub_parser.add_parser('start', help='start an application')
 	parser_stop = sub_parser.add_parser('stop', help='stop an application')
+	parser_stop = sub_parser.add_parser('cc', help='clear all containers from swarm')
 	# required arguments
 	required.add_argument('-c', '--config', required=True, help='yaml file describing the application')
 	#optional arguments
@@ -31,7 +32,7 @@ class Swarmpose():
 		self.nodes = self.parseFile(yamal)
 		#self.nodes_run.update(self.starting_nodes)
 
-		# self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
+		#self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
@@ -39,6 +40,12 @@ class Swarmpose():
 			nodes=yaml.load(fh)
 			print (nodes)
 			return nodes
+
+	def killAllTheContainers(self):
+		#don't look back!
+		toRemove = self.cli.containers(all='true', quiet='true')
+		for container in toRemove:
+			self.cli.remove_container(container['Id'])
 
 	def runImage(self, image, ports):
 		#Run the hello-world image and print the output
@@ -50,6 +57,7 @@ class Swarmpose():
 		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
 		result = self.cli.inspect_container(container=container.get('Id'))
 
+		print (result)
 		print ("This image ran on " + result['Node']['Addr'])
 		return container.get('Id')
 
@@ -65,9 +73,9 @@ class Swarmpose():
 
 		#Create a dictionary to indcate the nodes that have been started
 		nodes_run = {}
-		#for image in starting_nodes:
-			# test = runImage(image, nodes[image]['expose'])
-			# stopImage(test)
+		for image in starting_nodes:
+			test = self.runImage(image, self.nodes[image]['expose'])
+			self.stopImage(test)
 		nodes_run.update(starting_nodes)
 		#keep runnng until all nodes have been run
 		while len(nodes_run) != len(self.nodes):
@@ -98,5 +106,7 @@ if __name__ == '__main__':
 	mySwarmpose= Swarmpose(args.config)
 	if(args.action == 'start'):
 		mySwarmpose.start()
+	elif(args.action == 'cc'):
+		mySwarmpose.killAllTheContainers()
 	else:
 		mySwarmpose.stop()
