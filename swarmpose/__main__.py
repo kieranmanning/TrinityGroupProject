@@ -24,8 +24,8 @@ class Swarmpose():
 	#initialise the swarmpose class
 	def __init__(self, yamal):
 		self.yamal = yamal
-		self.HOST = "51.255.33.85"
-		self.PORT = "443" #443 redirected to port 4000 on remote server
+		self.HOST = "178.62.11.78"
+		self.PORT = "443"
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 		#parse the yaml file into a dictionary of dictionaries
