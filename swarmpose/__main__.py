@@ -93,11 +93,27 @@ class Swarmpose():
 				#self.stopImage(test)
 			nodes_run.update(next_nodes_2run)
 			remaining_nodes = {name:self.nodes[name] for name in self.nodes.keys() if name not in nodes_run.keys()}
-			
 
 
-	def stop(self):
-		print('**** Stopping Application ****')
+
+  def stop(self):
+    print('**** Stopping Application ****')
+    #nodes_to_kill =[]
+    can_stop=True
+    nodes_stopped={}
+#   starting_nodes = {name:config for name,config in self.nodes.items() if name not in 'links'}
+    while(len(nodes_stopped)!=len(self.nodes))
+      for temp, config in self.nodes.items():
+
+       for name, values in self.nodes.items():
+          if(temp in 'links')
+            if(inspect_container(name))
+              can_stop=False
+      if(can_stop=True)
+        nodes_stopped[temp] = config
+        stopImage(temp)
+
+
 
 	def nextNodesRunning(self, remaining_nodes, nodes_ran):
 		#get the next dictionary of nodes that depend on the starting nodes
