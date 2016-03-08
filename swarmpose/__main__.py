@@ -43,15 +43,20 @@ class Swarmpose():
 
 	def killAllTheContainers(self):
 		#don't look back!
-		toRemove = self.cli.containers(all='true', quiet='true')
+		toRemove = self.cli.containers(all='true')
 		for container in toRemove:
-			self.cli.remove_container(container['Id'])
+			for name in self.nodes:
+				if ''.join(container['Names']).find(name):
+					self.cli.remove_container(container['Id'], force=True)
 
-	def runImage(self, image, ports):
+	def runImage(self, name, image, ports, links=None):
 		#Run the hello-world image and print the output
-		bindings = dict(zip(ports, ports))
-		print (bindings)
-		container = self.cli.create_container(image=image, ports=ports, host_config=self.cli.create_host_config(port_bindings=bindings))
+		if (links != None):
+			toLink = dict(zip(links, links))
+			print (toLink)
+			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(links=toLink))
+		else:
+			container = self.cli.create_container(image=image, ports=ports, name=name)
 		self.cli.start(container=container.get('Id'))
 
 		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
@@ -73,15 +78,19 @@ class Swarmpose():
 
 		#Create a dictionary to indcate the nodes that have been started
 		nodes_run = {}
-		for image in starting_nodes:
-			test = self.runImage(image, self.nodes[image]['expose'])
-			self.stopImage(test)
+		for name in starting_nodes:
+			test = self.runImage(name, self.nodes[name]['image'], self.nodes[name]['expose'])
+			#self.stopImage(test)
 		nodes_run.update(starting_nodes)
 		#keep runnng until all nodes have been run
 		while len(nodes_run) != len(self.nodes):
 			#get the next dictionary of nodes that depend on the starting nodes
 			next_nodes_2run = self.nextNodesRunning(remaining_nodes, nodes_run)
+			print ("remaining nodes: %s" % remaining_nodes)
 			print("starting next %s" % next_nodes_2run)
+			for name in next_nodes_2run:
+				test = self.runImage(name, self.nodes[name]['image'], self.nodes[name]['expose'], self.nodes[name]['links'])
+				#self.stopImage(test)
 			nodes_run.update(next_nodes_2run)
 			remaining_nodes = {name:self.nodes[name] for name in self.nodes.keys() if name not in nodes_run.keys()}
 			
