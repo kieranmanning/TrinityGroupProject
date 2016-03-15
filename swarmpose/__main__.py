@@ -96,22 +96,22 @@ class Swarmpose():
 
 
 
-  def stop(self):
-    print('**** Stopping Application ****')
-    #nodes_to_kill =[]
-    can_stop=True
-    nodes_stopped={}
+	def stop(self):
+		print('**** Stopping Application ****')
+			#nodes_to_kill =[]
+		can_stop=True
+		nodes_stopped={}
 #   starting_nodes = {name:config for name,config in self.nodes.items() if name not in 'links'}
-    while(len(nodes_stopped)!=len(self.nodes))
-      for temp, config in self.nodes.items():
+		while(len(nodes_stopped)!=len(self.nodes)):
+			for temp, config in self.nodes.items():
 
-       for name, values in self.nodes.items():
-          if(temp in 'links')
-            if(inspect_container(name))
-              can_stop=False
-      if(can_stop=True)
-        nodes_stopped[temp] = config
-        stopImage(temp)
+				for name, values in self.nodes.items():
+					if(temp in 'links'):
+						if(inspect_container(name)):
+							can_stop=False
+			if(can_stop == True):
+				nodes_stopped[temp] = config
+				stopImage(temp)
 
 
 
