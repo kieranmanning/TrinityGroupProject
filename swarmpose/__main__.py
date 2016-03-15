@@ -54,10 +54,13 @@ class Swarmpose():
 		if (links != None):
 			toLink = dict(zip(links, links))
 			print (toLink)
-			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(links=toLink))
+			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode="dockernet"))
+			self.cli.connect_container_to_network(container=container.get('Id'), net_id="dockernet")
+			self.cli.start(container=container.get('Id'))
 		else:
-			container = self.cli.create_container(image=image, ports=ports, name=name)
-		self.cli.start(container=container.get('Id'))
+			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode="dockernet"))
+			self.cli.connect_container_to_network(container=container.get('Id'), net_id="dockernet")
+			self.cli.start(container=container.get('Id'))
 
 		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
 		result = self.cli.inspect_container(container=container.get('Id'))
