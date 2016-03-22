@@ -17,19 +17,30 @@ def clargs():
 	required.add_argument('-c', '--config', required=True, help='yaml file describing the application')
 	#optional arguments
 	parser.add_argument('-q', '--quiet', help='Supress messages from the script')
+	parser.add_argument('-n', '--network', help='Name of the overlay network')
 	return parser.parse_args()
 
 
 class Swarmpose():
+	def createOverlayNetwork(self, name):
+		self.cli.create_network(name=name, driver="overlay", options={"subnet":"10.0.9.0/24"})
+
+	def networkExists(self, network):
+		networks = self.cli.networks(names=[network])
+		return (len(networks) != 0)
+
 	#initialise the swarmpose class
-	def __init__(self, yamal):
+	def __init__(self, yamal, network="dockernet"):
 		self.yamal = yamal
 		self.HOST = "178.62.11.78"
-		self.PORT = "443"
+		self.PORT = "993"
 		#Connect to remote daemon
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 		#parse the yaml file into a dictionary of dictionaries
 		self.nodes = self.parseFile(yamal)
+		self.network = network
+		if (self.networkExists(network) != True):
+			self.createOverlayNetwork(network)
 		#self.nodes_run.update(self.starting_nodes)
 
 		#self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
@@ -54,12 +65,12 @@ class Swarmpose():
 		if (links != None):
 			toLink = dict(zip(links, links))
 			print (toLink)
-			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode="dockernet"))
-			self.cli.connect_container_to_network(container=container.get('Id'), net_id="dockernet")
+			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
+			#self.cli.connect_container_to_network(container=container.get('Id'), net_id=self.network)
 			self.cli.start(container=container.get('Id'))
 		else:
-			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode="dockernet"))
-			self.cli.connect_container_to_network(container=container.get('Id'), net_id="dockernet")
+			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
+			#self.cli.connect_container_to_network(container=container.get('Id'), net_id=self.network)
 			self.cli.start(container=container.get('Id'))
 
 		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
@@ -131,7 +142,7 @@ class Swarmpose():
 if __name__ == '__main__':
 	args = clargs()
 	print(args.action)
-	mySwarmpose= Swarmpose(args.config)
+	mySwarmpose= Swarmpose(args.config, args.network)
 	if(args.action == 'start'):
 		mySwarmpose.start()
 	elif(args.action == 'cc'):
