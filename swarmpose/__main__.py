@@ -38,9 +38,11 @@ class Swarmpose():
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 		#parse the yaml file into a dictionary of dictionaries
 		self.nodes = self.parseFile(yamal)
+		#pprint.pprint (self.nodes, width=1)
 		self.network = network
 		if (self.networkExists(network) != True):
 			self.createOverlayNetwork(network)
+
 		#self.nodes_run.update(self.starting_nodes)
 
 		#self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
@@ -54,11 +56,8 @@ class Swarmpose():
 
 	def killAllTheContainers(self):
 		#don't look back!
-		toRemove = self.cli.containers(all='true')
-		for container in toRemove:
-			for name in self.nodes:
-				if ''.join(container['Names']).find(name):
-					self.cli.remove_container(container['Id'], force=True)
+		for name,val in self.nodes.items():
+			self.cli.remove_container(name, force=True)
 
 	def runImage(self, name, image, ports, links=None):
 		#Run the hello-world image and print the output
