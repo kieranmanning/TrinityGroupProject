@@ -20,10 +20,9 @@ def clargs():
 	parser.add_argument('-n', '--network', help='Name of the overlay network')
 	return parser.parse_args()
 
-
 class Swarmpose():
 	def createOverlayNetwork(self, name):
-		self.cli.create_network(name=name, driver="overlay", options={"subnet":"10.0.9.0/24"})
+		self.cli.create_network(name=name, driver="overlay")
 
 	def networkExists(self, network):
 		networks = self.cli.networks(names=[network])
@@ -46,37 +45,38 @@ class Swarmpose():
 	def parseFile(self, file):
 		with open(file, 'r') as fh:
 			nodes=yaml.load(fh)
-			print (nodes)
+			#print (nodes)
 			return nodes
 
 	def killAllTheContainers(self):
 		#don't look back!
 		for name,val in self.nodes.items():
+			print ("Purging " + name + "...")
 			self.cli.remove_container(name, force=True)
 
 	def runImage(self, name, image, ports, links=None):
 		#Run the hello-world image and print the output
 		if (links != None):
 			toLink = dict(zip(links, links))
-			print (toLink)
+			#print (toLink)
 			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
 			self.cli.start(container=container.get('Id'))
 		else:
 			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
 			self.cli.start(container=container.get('Id'))
 
-		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
+		#print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
 		result = self.cli.inspect_container(container=container.get('Id'))
 
-		print (result)
-		print ("This image ran on " + result['Node']['Addr'])
+		#print (result)
+		print ("Started " + name + " on " + result['Node']['Addr'])
 		return container.get('Id')
 
 	def stopImage(self, container):
 		self.cli.stop(container)
 
 	def start(self):
-		print('**** Starting Application ****')
+		print('**** Starting Application on Swarm ****')
 		#seperate our nodes into two dictionaries, the starting_nodes wich have no dependancies and
 		#remaining nodes which have dependancies
 		starting_nodes = {name:config for name,config in self.nodes.items() if 'links' not in config}
@@ -91,14 +91,12 @@ class Swarmpose():
 		while len(nodes_run) != len(self.nodes):
 			#get the next dictionary of nodes that depend on the starting nodes
 			next_nodes_2run = self.nextNodesRunning(remaining_nodes, nodes_run)
-			print ("remaining nodes: %s" % remaining_nodes)
-			print("starting next %s" % next_nodes_2run)
+			#print ("remaining nodes: %s" % remaining_nodes)
+			#print("starting next %s" % next_nodes_2run)
 			for name in next_nodes_2run:
 				test = self.runImage(name, self.nodes[name]['image'], self.nodes[name]['expose'], self.nodes[name]['links'])
 			nodes_run.update(next_nodes_2run)
 			remaining_nodes = {name:self.nodes[name] for name in self.nodes.keys() if name not in nodes_run.keys()}
-
-
 
 	def stop(self):
 		print('**** Stopping Application ****')
@@ -106,7 +104,6 @@ class Swarmpose():
 		nodes_stopped={}
 		while(len(nodes_stopped)!=len(self.nodes)):
 			for temp, config in self.nodes.items():
-
 				for name, values in self.nodes.items():
 					if(temp in 'links'):
 						if(inspect_container(name)):
@@ -114,8 +111,6 @@ class Swarmpose():
 			if(can_stop == True):
 				nodes_stopped[temp] = config
 				stopImage(temp)
-
-
 
 	def nextNodesRunning(self, remaining_nodes, nodes_ran):
 		#get the next dictionary of nodes that depend on the starting nodes
