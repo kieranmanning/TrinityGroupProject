@@ -1,4 +1,3 @@
-""" main code goes here """
 from docker import Client
 import argparse
 import yaml
@@ -45,7 +44,6 @@ class Swarmpose():
 	def parseFile(self, file):
 		with open(file, 'r') as fh:
 			nodes=yaml.load(fh)
-			#print (nodes)
 			return nodes
 
 	def killAllTheContainers(self):
@@ -57,11 +55,7 @@ class Swarmpose():
 	def runImage(self, name, image, ports, links=None):
 		container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
 		self.cli.start(container=container.get('Id'))
-
-		#print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
 		result = self.cli.inspect_container(container=container.get('Id'))
-
-		#print (result)
 		print ("Started " + name + " on " + result['Node']['Addr'])
 		return container.get('Id')
 
@@ -84,8 +78,6 @@ class Swarmpose():
 		while len(nodes_run) != len(self.nodes):
 			#get the next dictionary of nodes that depend on the starting nodes
 			next_nodes_2run = self.nextNodesRunning(remaining_nodes, nodes_run)
-			#print ("remaining nodes: %s" % remaining_nodes)
-			#print("starting next %s" % next_nodes_2run)
 			for name in next_nodes_2run:
 				test = self.runImage(name, self.nodes[name]['image'], self.nodes[name]['expose'], self.nodes[name]['links'])
 			nodes_run.update(next_nodes_2run)
