@@ -32,7 +32,7 @@ class Swarmpose():
 		self.yamal = yamal
 		self.HOST = "178.62.11.78"
 		self.PORT = "993"
-		#Connect to remote daemon
+		#Connect to remote daemonfasdfds
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 		#parse the yaml file into a dictionary of dictionaries
 		self.nodes = self.parseFile(yamal)
