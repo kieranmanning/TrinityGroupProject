@@ -18,11 +18,13 @@ def clargs():
 	#sub commands for the program
 	start = sub_parser.add_parser('start', help='start an application')
 	command_setup(start)
-	start.add_argument('-n', '--network', help='Name of the overlay network', default='dockernet')
 	stop = sub_parser.add_parser('stop', help='stop an application')
 	command_setup(stop)
 	cc = sub_parser.add_parser('cc', help='clear all containers from swarm')
 	command_setup(cc)
+	create = sub_parser.add_parser('create', help='create containers on the swarm')
+	create.add_argument('-n', '--network', help='Name of the overlay network', default='dockernet')
+	command_setup(create)
 
 	return main_parser.parse_args()
 
@@ -63,19 +65,24 @@ class Swarmpose():
 	    except errors.NotFound as e:
 	      print(e.explanation.decode('UTF-8'))
 
-	def runImage(self, name, image, ports, links=None):
+	#create containers on the swarm
+	def createContainers(self):
+		for name, config in self.nodes.items():
+			try:
+				container = self.cli.create_container(image=config['image'] , ports=config['expose'], name=name, host_config=self.cli.create_host_config(network_mode=self.network))
+				result =self.cli.inspect_container(container=name)
+				print("Created %s container on node %s" % (name, result['Node']['Addr']))
+			except errors.APIError as e:
+				print(e.explanation.decode('UTF-8'))
+
+	#run the image with the given name
+	def runImage(self, name):
 		try:
-			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
-			self.cli.start(container=container.get('Id'))
-			result = self.cli.inspect_container(container=container.get('Id'))
-			print ("Started " + name + " on " + result['Node']['Addr'])
-			return container.get('Id')
+			self.cli.start(container=name)
+			result = self.cli.inspect_container(container=name)
+			print('Container %s started on node %s' % (name, result['Node']['Addr']))
 		except errors.APIError as e:
 			print(e.explanation.decode('UTF-8'))
-
-	def stopImage(self, container):
-		print("Stopping image "+ container)
-		self.cli.stop(container)
 
 	def start(self):
 		print('**** Starting Application on Swarm ****')
@@ -83,20 +90,27 @@ class Swarmpose():
 		#remaining nodes which have dependancies
 		starting_nodes = {name:config for name,config in self.nodes.items() if 'links' not in config}
 		remaining_nodes = {name:self.nodes[name] for name  in self.nodes.keys() if name not in starting_nodes.keys()}
-
 		#Create a dictionary to indcate the nodes that have been started
 		nodes_run = {}
 		for name in starting_nodes:
-			test = self.runImage(name, self.nodes[name]['image'], self.nodes[name]['expose'])
+			self.runImage(name)
 		nodes_run.update(starting_nodes)
 		#keep runnng until all nodes have been run
 		while len(nodes_run) != len(self.nodes):
 			#get the next dictionary of nodes that depend on the starting nodes
 			next_nodes_2run = self.nextNodesRunning(remaining_nodes, nodes_run)
 			for name in next_nodes_2run:
-				test = self.runImage(name, self.nodes[name]['image'], self.nodes[name]['expose'], self.nodes[name]['links'])
+				self.runImage(name)
 			nodes_run.update(next_nodes_2run)
 			remaining_nodes = {name:self.nodes[name] for name in self.nodes.keys() if name not in nodes_run.keys()}
+
+	#stop images currently running on swarm
+	def stopImage(self, container):
+		try:
+			print("Stopping image "+ container)
+			self.cli.stop(container)
+		except errors.APIError as e:
+				print(e.explanation.decode('UTF-8'))
 
 	def stop(self):
 		print('**** Stopping Application ****')
@@ -113,7 +127,6 @@ class Swarmpose():
 					self.stopImage(temp)
 
 
-
 	def nextNodesRunning(self, remaining_nodes, nodes_ran):
 		#get the next dictionary of nodes that depend on the starting nodes
 		next_nodes_run = {}
@@ -125,8 +138,10 @@ class Swarmpose():
 if __name__ == '__main__':
 	args = clargs()
 	if(args.cmd == 'start'):
-		Swarmpose(args.config, args.manager, args.network).start()
+		Swarmpose(args.config, args.manager).start()
 	elif(args.cmd == 'cc'):
 		Swarmpose(args.config, args.manager).killAllTheContainers()
+	elif(args.cmd == 'create'):
+		Swarmpose(args.config, args.manager, args.network).createContainers()
 	else:
 		Swarmpose(args.config, args.manager).stop()
