@@ -55,15 +55,8 @@ class Swarmpose():
 			self.cli.remove_container(name, force=True)
 
 	def runImage(self, name, image, ports, links=None):
-		#Run the hello-world image and print the output
-		if (links != None):
-			toLink = dict(zip(links, links))
-			#print (toLink)
-			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
-			self.cli.start(container=container.get('Id'))
-		else:
-			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
-			self.cli.start(container=container.get('Id'))
+		container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
+		self.cli.start(container=container.get('Id'))
 
 		#print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
 		result = self.cli.inspect_container(container=container.get('Id'))
