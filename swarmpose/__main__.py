@@ -38,14 +38,9 @@ class Swarmpose():
 		self.cli = Client(base_url='tcp://' + self.HOST + ':' + self.PORT)
 		#parse the yaml file into a dictionary of dictionaries
 		self.nodes = self.parseFile(yamal)
-		#pprint.pprint (self.nodes, width=1)
 		self.network = network
 		if (self.networkExists(network) != True):
 			self.createOverlayNetwork(network)
-
-		#self.nodes_run.update(self.starting_nodes)
-
-		#self.next_nodes_2run = {key:val for key, val in self.yamal_dict.items() if self.starting_nodes.has_key()}
 
 	#parse the yamal file and return a dictionary
 	def parseFile(self, file):
@@ -65,11 +60,9 @@ class Swarmpose():
 			toLink = dict(zip(links, links))
 			print (toLink)
 			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
-			#self.cli.connect_container_to_network(container=container.get('Id'), net_id=self.network)
 			self.cli.start(container=container.get('Id'))
 		else:
 			container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
-			#self.cli.connect_container_to_network(container=container.get('Id'), net_id=self.network)
 			self.cli.start(container=container.get('Id'))
 
 		print (self.cli.logs(container=container.get('Id')).decode('UTF-8'))
@@ -93,7 +86,6 @@ class Swarmpose():
 		nodes_run = {}
 		for name in starting_nodes:
 			test = self.runImage(name, self.nodes[name]['image'], self.nodes[name]['expose'])
-			#self.stopImage(test)
 		nodes_run.update(starting_nodes)
 		#keep runnng until all nodes have been run
 		while len(nodes_run) != len(self.nodes):
@@ -103,7 +95,6 @@ class Swarmpose():
 			print("starting next %s" % next_nodes_2run)
 			for name in next_nodes_2run:
 				test = self.runImage(name, self.nodes[name]['image'], self.nodes[name]['expose'], self.nodes[name]['links'])
-				#self.stopImage(test)
 			nodes_run.update(next_nodes_2run)
 			remaining_nodes = {name:self.nodes[name] for name in self.nodes.keys() if name not in nodes_run.keys()}
 
@@ -111,10 +102,8 @@ class Swarmpose():
 
 	def stop(self):
 		print('**** Stopping Application ****')
-			#nodes_to_kill =[]
 		can_stop=True
 		nodes_stopped={}
-#   starting_nodes = {name:config for name,config in self.nodes.items() if name not in 'links'}
 		while(len(nodes_stopped)!=len(self.nodes)):
 			for temp, config in self.nodes.items():
 
@@ -134,9 +123,7 @@ class Swarmpose():
 		for name, config in remaining_nodes.items():
 			if set(config['links']).issubset(set(list(nodes_ran.keys()))):
 				next_nodes_run[name] = config
-
-		#self.next_nodes_2run = {name:config for name, config in self.remaining_nodes.items() if set(config['links']).issubset(set(list(self.starting_nodes.keys())))}
-		return next_nodes_run
+				return next_nodes_run
 
 if __name__ == '__main__':
 	args = clargs()
