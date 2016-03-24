@@ -6,7 +6,7 @@ import pprint
 
 #allows us to specify the command line arguments that the script must recieve in order to execute
 def clargs():
-	parser = argparse.ArgumentParser(description='a script to start an application on a distributed system')
+	parser = argparse.ArgumentParser(description='a script to start an application on a distributed swarm network')
 	required = parser.add_argument_group('required arguments')
 	sub_parser = parser.add_subparsers(dest='action')
 	#sub commands for the program
