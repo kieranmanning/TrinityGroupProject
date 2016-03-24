@@ -60,6 +60,7 @@ class Swarmpose():
 		return container.get('Id')
 
 	def stopImage(self, container):
+		print("Stopping image "+ container)
 		self.cli.stop(container)
 
 	def start(self):
@@ -90,12 +91,14 @@ class Swarmpose():
 		while(len(nodes_stopped)!=len(self.nodes)):
 			for temp, config in self.nodes.items():
 				for name, values in self.nodes.items():
-					if(temp in 'links'):
+					if(temp in 'links') :
 						if(inspect_container(name)):
 							can_stop=False
-			if(can_stop == True):
-				nodes_stopped[temp] = config
-				stopImage(temp)
+				if(can_stop == True and temp not in nodes_stopped):
+					nodes_stopped[temp] = config
+					self.stopImage(temp)
+
+
 
 	def nextNodesRunning(self, remaining_nodes, nodes_ran):
 		#get the next dictionary of nodes that depend on the starting nodes
