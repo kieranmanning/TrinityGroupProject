@@ -20,8 +20,8 @@ def clargs():
 	command_setup(start)
 	stop = sub_parser.add_parser('stop', help='stop an application')
 	command_setup(stop)
-	cc = sub_parser.add_parser('cc', help='clear all containers from swarm')
-	command_setup(cc)
+	purge = sub_parser.add_parser('purge', help='clear all containers from swarm')
+	command_setup(purge)
 	create = sub_parser.add_parser('create', help='create containers on the swarm')
 	create.add_argument('-n', '--network', help='Name of the overlay network', default='dockernet')
 	command_setup(create)
@@ -73,7 +73,7 @@ class Swarmpose():
 				if ('ports' in config):
 					expose = dict(item.split(':') for item in self.nodes[name]['ports'])
 				container = self.cli.create_container(image=config['image'] , ports=config['expose'], name=name, host_config=self.cli.create_host_config(port_bindings=expose, network_mode=self.network))
-				result =self.cli.inspect_container(container=name)
+				result = self.cli.inspect_container(container=name)
 				print("Created %s container on node %s" % (name, result['Node']['Addr']))
 				if (expose is not None):
 					print ("Will expose ports " + str(expose) + " on " + result['Node']['Addr'])
@@ -144,7 +144,7 @@ if __name__ == '__main__':
 	args = clargs()
 	if(args.cmd == 'start'):
 		Swarmpose(args.config, args.manager).start()
-	elif(args.cmd == 'cc'):
+	elif(args.cmd == 'purge'):
 		Swarmpose(args.config, args.manager).killAllTheContainers()
 	elif(args.cmd == 'create'):
 		Swarmpose(args.config, args.manager, args.network).createContainers()
