@@ -53,10 +53,15 @@ class Swarmpose():
 			self.cli.remove_container(name, force=True)
 
 	def runImage(self, name, image, ports, links=None):
-		container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(network_mode=self.network))
+		expose = None
+		if ('ports' in self.nodes[name]):
+			expose = dict(item.split(':') for item in self.nodes[name]['ports'])
+		container = self.cli.create_container(image=image, ports=ports, name=name, host_config=self.cli.create_host_config(port_bindings=expose, network_mode=self.network))
 		self.cli.start(container=container.get('Id'))
 		result = self.cli.inspect_container(container=container.get('Id'))
 		print ("Started " + name + " on " + result['Node']['Addr'])
+		if (expose is not None):
+			print ("Exposed ports " + str(expose) + " on " + result['Node']['Addr'])
 		return container.get('Id')
 
 	def stopImage(self, container):
@@ -107,7 +112,6 @@ class Swarmpose():
 
 if __name__ == '__main__':
 	args = clargs()
-	print(args.action)
 	mySwarmpose= Swarmpose(args.config, args.network)
 	if(args.action == 'start'):
 		mySwarmpose.start()
