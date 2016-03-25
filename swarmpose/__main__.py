@@ -4,7 +4,7 @@ import argparse
 import yaml
 import pprint
 
-def command_setup(subparser):
+def common_flags(subparser):
 	subparser.add_argument('-c', '--config', required=True, help='yaml file describing the application')
 	subparser.add_argument('-m', '--manager', required=True, help='sepcify the host and port of the docker manager eg 127.0.0.1:3000')
 	subparser.add_argument('-q', '--quiet', required=False, help='Supress messages from the script')
@@ -17,14 +17,14 @@ def clargs():
 	sub_parser.required = True
 	#sub commands for the program
 	start = sub_parser.add_parser('start', help='start an application')
-	command_setup(start)
+	common_flags(start)
 	stop = sub_parser.add_parser('stop', help='stop an application')
-	command_setup(stop)
-	purge = sub_parser.add_parser('purge', help='clear all containers from swarm')
-	command_setup(purge)
+	common_flags(stop)
+	purge = sub_parser.add_parser('purge', help='clear all containers specified in the config file from swarm')
+	common_flags(purge)
 	create = sub_parser.add_parser('create', help='create containers on the swarm')
-	create.add_argument('-n', '--network', help='Name of the overlay network', default='dockernet')
-	command_setup(create)
+	create.add_argument('-n', '--network', help='Name of the overlay network, if none specified default name (\'dockernet\') will be used', default='dockernet')
+	common_flags(create)
 
 	return main_parser.parse_args()
 
@@ -118,26 +118,31 @@ class Swarmpose():
 				print(e.explanation.decode('UTF-8'))
 
 	def stop(self):
-		print('**** Stopping Application ****')
-		can_stop=True
-		nodes_stopped={}
-		while(len(nodes_stopped)!=len(self.nodes)):
-			for temp, config in self.nodes.items():
-				for name, values in self.nodes.items():
-					if(temp in 'links') :
-						if(inspect_container(name)):
-							can_stop=False
-				if(can_stop == True and temp not in nodes_stopped):
-					nodes_stopped[temp] = config
-					self.stopImage(temp)
+		print("**** Stopping Application *****")
+		depend_list = self.genDependancyList()
+		for name in reversed(depend_list):
+			self.stopImage(name)
+
+	def genDependancyList(self):
+		starting_nodes = {name:config for name,config in self.nodes.items() if 'links' not in config}
+		remaining_nodes = {name:self.nodes[name] for name  in self.nodes.keys() if name not in starting_nodes.keys()}
+		starting_nodes_names = list(starting_nodes.keys())
+		while len(remaining_nodes) > 0:
+			nextNodes = self.nextNodesRunning(remaining_nodes, starting_nodes)
+			starting_nodes_names = starting_nodes_names + list(nextNodes.keys())
+			starting_nodes = {**starting_nodes, **nextNodes}
+		return starting_nodes_names
 
 
+
+	#returns a dictionary of nodes which have their dependancies fulfilled
 	def nextNodesRunning(self, remaining_nodes, nodes_ran):
-		#get the next dictionary of nodes that depend on the starting nodes
 		next_nodes_run = {}
 		for name, config in remaining_nodes.items():
+			#if a nodes links exist in the nodes ran dict (dependancies have been fullfiled)
 			if set(config['links']).issubset(set(list(nodes_ran.keys()))):
 				next_nodes_run[name] = config
+				remaining_nodes.pop(name, None)
 				return next_nodes_run
 
 if __name__ == '__main__':
@@ -149,4 +154,5 @@ if __name__ == '__main__':
 	elif(args.cmd == 'create'):
 		Swarmpose(args.config, args.manager, args.network).createContainers()
 	else:
+		#args.cmd == stop
 		Swarmpose(args.config, args.manager).stop()
