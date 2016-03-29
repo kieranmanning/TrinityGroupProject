@@ -3,7 +3,7 @@ from docker import errors
 import argparse
 import yaml
 
-def shared_flags(subparser):
+def sharedFlags(subparser):
 	required = subparser.add_argument_group('required arguments')
 	required.add_argument('-c', '--config', required=True, help='yaml file describing the application')
 	required.add_argument('-m', '--manager', required=True, help='sepcify the host and port of the docker manager eg 127.0.0.1:3000')
@@ -17,14 +17,14 @@ def clargs():
 	sub_parser.required = True
 	#sub commands for the program
 	start = sub_parser.add_parser('start', help='start an application')
-	shared_flags(start)
+	sharedFlags(start)
 	stop = sub_parser.add_parser('stop', help='stop an application')
-	shared_flags(stop)
+	sharedFlags(stop)
 	purge = sub_parser.add_parser('purge', help='clear all containers specified in the config file from swarm')
-	shared_flags(purge)
+	sharedFlags(purge)
 	create = sub_parser.add_parser('create', help='create containers on the swarm')
 	create.add_argument('-n', '--network', help='Name of the overlay network, if none specified default name (\'dockernet\') will be used', default='dockernet')
-	shared_flags(create)
+	sharedFlags(create)
 
 	return main_parser.parse_args()
 
@@ -54,7 +54,8 @@ class Swarmpose():
 			nodes=yaml.load(fh)
 			return nodes
 
-	def killAllTheContainers(self):
+	#removes all containers (in no particular order) from the swarm
+	def removeAllContainers(self):
 		#don't look back!
 	  print("**** Clearing Containers ****")
 	  for name,val in self.nodes.items():
@@ -88,14 +89,14 @@ class Swarmpose():
 		except errors.APIError as e:
 			print(e.explanation.decode('UTF-8'))
 
-	#start the application described by config file
+	#start the application described by config file in dependancy order
 	def start(self):
 		print('**** Starting Application on Swarm ****')
 		dependancy_list = self.genDependancyList()
 		for name in dependancy_list:
 			self.runImage(name)
 
-	#stop images (from the config file) currently running on swarm
+	#stop images (from the config file) currently running on swarm in reverse dependancy order
 	def stopImage(self, container):
 		try:
 			print("Stopping image "+ container)
@@ -111,31 +112,32 @@ class Swarmpose():
 			self.stopImage(name)
 
 	def genDependancyList(self):
+		#find nodes with no dependancies
 		starting_nodes = {name:config for name,config in self.nodes.items() if 'links' not in config}
+		#find nodes with dependancies
 		remaining_nodes = {name:self.nodes[name] for name  in self.nodes.keys() if name not in starting_nodes.keys()}
-		starting_nodes_names = list(starting_nodes.keys())
+		dependancy_list = list(starting_nodes.keys())
 		while len(remaining_nodes) > 0:
-			nextNodes = self.nextNodesRunning(remaining_nodes, starting_nodes)
-			starting_nodes_names = starting_nodes_names + list(nextNodes.keys())
-			starting_nodes = {**starting_nodes, **nextNodes}
-		return starting_nodes_names
+			nextNode = self.nextNodeRunning(remaining_nodes, starting_nodes)
+			dependancy_list.append(nextNode)
+			remaining_nodes.pop(nextNode, None)
+			starting_nodes[nextNode] = self.nodes[nextNode]
+		return dependancy_list
 
-	#returns a dictionary of nodes which have their dependancies fulfilled
-	def nextNodesRunning(self, remaining_nodes, nodes_ran):
-		next_nodes_run = {}
+	#returns the name of the node which can be started next
+	#this is based on the remaining nodes and the nodes that have been started
+	def nextNodeRunning(self, remaining_nodes, nodes_ran):
 		for name, config in remaining_nodes.items():
-			#if a nodes links exist in the nodes ran dict (dependancies have been fullfiled)
+			#if a nodes links are a subset of the nodes ran (dependancies have been fullfiled)
 			if set(config['links']).issubset(set(list(nodes_ran.keys()))):
-				next_nodes_run[name] = config
-				remaining_nodes.pop(name, None)
-				return next_nodes_run
+				return name
 
 if __name__ == '__main__':
 	args = clargs()
 	if(args.cmd == 'start'):
 		Swarmpose(args.config, args.manager).start()
 	elif(args.cmd == 'purge'):
-		Swarmpose(args.config, args.manager).killAllTheContainers()
+		Swarmpose(args.config, args.manager).removeAllContainers()
 	elif(args.cmd == 'create'):
 		Swarmpose(args.config, args.manager, args.network).createContainers()
 	else:
