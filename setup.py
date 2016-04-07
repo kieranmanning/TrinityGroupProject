@@ -16,7 +16,7 @@ setup(
                 Niall Wall
                 Dervla Walsh""",
       author_email="costeloci@tcd.ie",
-      packages=['swarmpose',],
+      packages=['swarmpose'],
       url="",
       description="a Docker Compose like script to start multi-tiered applications on a Docker Swarm"
       )
